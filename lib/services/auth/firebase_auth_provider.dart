@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:firebase_core/firebase_core.dart';
 import 'package:mynotes/services/auth/auth_user.dart';
 import 'package:mynotes/services/auth/auth_provider.dart';
@@ -6,6 +8,7 @@ import 'package:mynotes/services/auth/auth_exception.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../firebase_options.dart';
+import 'dart:developer' as devtools show log;
 
 class FirebaseAuthProvide implements AuthProvider {
   @override
@@ -70,8 +73,10 @@ class FirebaseAuthProvide implements AuthProvider {
         case 'user-not-found':
           throw UserNotFoundAuthException();
         case 'wrong-password':
+          devtools.log(e.message ?? 'wrong password');
           throw WrongPasswordAuthException();
         default:
+          devtools.log(e.message ?? 'something wrong');
           throw GenericAuthException();
       }
     } catch (_) {
