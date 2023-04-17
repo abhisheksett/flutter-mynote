@@ -15,10 +15,10 @@ const idColumn = "id";
 const emailColumn = "email";
 const userIdColumn = "user_id";
 const textColumn = "text";
-const isSyncedWithCloudColumn = "is_synced_with_cloud";
-const createNoteTable = '''CREATE TABLE "note" (
+const isSyncedWithCloudColumn = "is_synced";
+const createNoteTable = '''CREATE TABLE IF NOT EXISTS "note" (
         "id"	INTEGER NOT NULL,
-        "user_id"	INTEGER NOT NULL,
+        "user_id"	TEXT NOT NULL,
         "text"	TEXT,
         "is_synced"	INTEGER NOT NULL DEFAULT 0,
         PRIMARY KEY("id" AUTOINCREMENT),
@@ -37,11 +37,17 @@ class NoteService {
 
   // creating singleton
   static final NoteService _shared = NoteService._sharedInstance();
-  NoteService._sharedInstance();
+  NoteService._sharedInstance() {
+    _notesStreamController = StreamController<List<DatabaseNotes>>.broadcast(
+      onListen: () {
+        _notesStreamController.sink.add(_notes);
+      },
+    );
+  }
+
   factory NoteService() => _shared;
 
-  final _notesStreamController =
-      StreamController<List<DatabaseNotes>>.broadcast();
+  late final StreamController<List<DatabaseNotes>> _notesStreamController;
 
   Stream<List<DatabaseNotes>> get allNotes => _notesStreamController.stream;
 
@@ -50,7 +56,7 @@ class NoteService {
       final user = await getUser(email: email);
       return user;
     } on CouldNotFindUSerException {
-      final createdUser = createUser(email: email);
+      final createdUser = await createUser(email: email);
       return createdUser;
     } catch (e) {
       rethrow;
@@ -152,15 +158,12 @@ class NoteService {
 
     const text = '';
 
-    final noteId = await db.insert(notesTable, {
-      userIdColumn: owner.email,
-      textColumn: text,
-      isSyncedWithCloudColumn: 1
-    });
+    final noteId = await db.insert(notesTable,
+        {userIdColumn: owner.id, textColumn: text, isSyncedWithCloudColumn: 1});
 
     final note = DatabaseNotes(
       id: noteId,
-      userId: owner.id,
+      userId: owner.email,
       text: text,
       isSyncedWithCloud: true,
     );
@@ -204,7 +207,7 @@ class NoteService {
       throw UserAlreadyExists();
     }
 
-    final userId = await db.insert(userTable, {email: email.toLowerCase()});
+    final userId = await db.insert(userTable, {'email': email.toLowerCase()});
 
     return DatabaseUser(id: userId, email: email);
   }
@@ -300,7 +303,7 @@ class DatabaseUser {
 
 class DatabaseNotes {
   final int id;
-  final int userId;
+  final String userId;
   final String text;
   final bool isSyncedWithCloud;
 
@@ -313,7 +316,7 @@ class DatabaseNotes {
 
   DatabaseNotes.fromRow(Map<String, Object?> map)
       : id = map[idColumn] as int,
-        userId = map[userIdColumn] as int,
+        userId = map[userIdColumn] as String,
         text = map[textColumn] as String,
         isSyncedWithCloud = map[isSyncedWithCloudColumn] == 1 ? true : false;
 
