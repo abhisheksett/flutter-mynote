@@ -30,14 +30,15 @@ const createUserTable = '''CREATE TABLE IF NOT EXISTS "user" (
         PRIMARY KEY("id" AUTOINCREMENT)
       );''';
 
-class NoteService {
+class CreateUpdateNoteView {
   Database? _db;
 
   List<DatabaseNotes> _notes = [];
 
   // creating singleton
-  static final NoteService _shared = NoteService._sharedInstance();
-  NoteService._sharedInstance() {
+  static final CreateUpdateNoteView _shared =
+      CreateUpdateNoteView._sharedInstance();
+  CreateUpdateNoteView._sharedInstance() {
     _notesStreamController = StreamController<List<DatabaseNotes>>.broadcast(
       onListen: () {
         _notesStreamController.sink.add(_notes);
@@ -45,7 +46,7 @@ class NoteService {
     );
   }
 
-  factory NoteService() => _shared;
+  factory CreateUpdateNoteView() => _shared;
 
   late final StreamController<List<DatabaseNotes>> _notesStreamController;
 
@@ -78,8 +79,14 @@ class NoteService {
     final db = _getDatabaseOrThrow();
     await getNote(id: note.id); // This makes sure the note exists
     // update db
-    final updateCount = await db
-        .update(notesTable, {textColumn: text, isSyncedWithCloudColumn: 0});
+    final updateCount = await db.update(
+        notesTable,
+        {
+          textColumn: text,
+          isSyncedWithCloudColumn: 0,
+        },
+        where: 'id = ?',
+        whereArgs: [note.id]);
 
     if (updateCount == 0) {
       throw CouldNotUpdateNoteException();
