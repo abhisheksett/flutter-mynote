@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:mynotes/services/auth/auth_service.dart';
 import 'package:mynotes/services/crud/notes_service.dart';
+import 'package:mynotes/view/notes/notes_list_view.dart';
 import '../../constants/routes.dart';
 import '../../enums/menu_action.dart';
-import '../../main.dart';
+import '../../utilities/dialogs/logout_dialog.dart';
 
 class NotesView extends StatefulWidget {
   const NotesView({super.key});
@@ -70,18 +71,11 @@ class _NotesViewState extends State<NotesView> {
                     case ConnectionState.active:
                       if (snapshot.hasData) {
                         final allNotes = snapshot.data as List<DatabaseNotes>;
-                        return ListView.builder(
-                          itemCount: allNotes.length,
-                          itemBuilder: (context, index) {
-                            final currentNote = allNotes[index];
-                            return ListTile(
-                              title: Text(
-                                currentNote.text,
-                                maxLines: 1,
-                                softWrap: true,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            );
+                        print(allNotes);
+                        return NotesListView(
+                          notes: allNotes,
+                          onDeleteNote: (note) async {
+                            await _noteService.deleteNote(noteId: note.id);
                           },
                         );
                       } else {

@@ -65,6 +65,7 @@ class NoteService {
 
   Future<void> _cacheNotes() async {
     final allNotes = await getAllNotes();
+    print(allNotes);
     _notes = allNotes.toList();
     _notesStreamController.add(_notes);
   }
