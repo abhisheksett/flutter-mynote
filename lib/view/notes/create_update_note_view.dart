@@ -5,21 +5,21 @@ import 'package:mynotes/services/auth/auth_service.dart';
 import 'package:mynotes/services/crud/notes_service.dart';
 import 'package:mynotes/utilities/generics/get_arguments.dart';
 
-class NewNoteView extends StatefulWidget {
-  const NewNoteView({super.key});
+class CreateOrUpdateNoteView extends StatefulWidget {
+  const CreateOrUpdateNoteView({super.key});
 
   @override
-  State<NewNoteView> createState() => _NewNoteViewState();
+  State<CreateOrUpdateNoteView> createState() => _CreateOrUpdateNoteViewState();
 }
 
-class _NewNoteViewState extends State<NewNoteView> {
+class _CreateOrUpdateNoteViewState extends State<CreateOrUpdateNoteView> {
   DatabaseNotes? _note;
-  late final CreateUpdateNoteView _noteService;
+  late final NotesService _noteService;
   late final TextEditingController _textController;
 
   @override
   void initState() {
-    _noteService = CreateUpdateNoteView();
+    _noteService = NotesService();
     _textController = TextEditingController();
     super.initState();
   }

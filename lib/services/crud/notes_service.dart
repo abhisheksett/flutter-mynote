@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:mynotes/extensions/list/filter.dart';
+import 'package:mynotes/services/auth/auth_exception.dart';
 import 'package:path/path.dart' show join;
 import 'package:path_provider/path_provider.dart'
     show MissingPlatformDirectoryException, getApplicationDocumentsDirectory;
@@ -30,15 +32,16 @@ const createUserTable = '''CREATE TABLE IF NOT EXISTS "user" (
         PRIMARY KEY("id" AUTOINCREMENT)
       );''';
 
-class CreateUpdateNoteView {
+class NotesService {
   Database? _db;
+
+  DatabaseUser? _user;
 
   List<DatabaseNotes> _notes = [];
 
   // creating singleton
-  static final CreateUpdateNoteView _shared =
-      CreateUpdateNoteView._sharedInstance();
-  CreateUpdateNoteView._sharedInstance() {
+  static final NotesService _shared = NotesService._sharedInstance();
+  NotesService._sharedInstance() {
     _notesStreamController = StreamController<List<DatabaseNotes>>.broadcast(
       onListen: () {
         _notesStreamController.sink.add(_notes);
@@ -46,18 +49,33 @@ class CreateUpdateNoteView {
     );
   }
 
-  factory CreateUpdateNoteView() => _shared;
+  factory NotesService() => _shared;
 
   late final StreamController<List<DatabaseNotes>> _notesStreamController;
 
-  Stream<List<DatabaseNotes>> get allNotes => _notesStreamController.stream;
+  Stream<List<DatabaseNotes>> get allNotes =>
+      _notesStreamController.stream.filter((note) {
+        final currentUser = _user;
+        if (currentUser != null) {
+          return note.userId == currentUser.id.toString();
+        } else {
+          throw UserShouldBeSetBeforeReadingAllNotes();
+        }
+      });
 
-  Future<DatabaseUser> getOrCreateUser({required String email}) async {
+  Future<DatabaseUser> getOrCreateUser({
+    required String email,
+    bool setAsCurrentUser = true,
+  }) async {
     try {
       final user = await getUser(email: email);
+      if (setAsCurrentUser) {
+        _user = user;
+      }
       return user;
     } on CouldNotFindUSerException {
       final createdUser = await createUser(email: email);
+      _user = createdUser;
       return createdUser;
     } catch (e) {
       rethrow;
